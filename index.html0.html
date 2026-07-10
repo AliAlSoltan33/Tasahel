@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>كراج التساهل - وصل مبيعات</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Amiri:wght@400;700&display=swap');
+
+  :root{
+    --cream:#faf6ef;
+    --ink:#2b2320;
+    --maroon:#8f2d2d;
+    --pink-border:#d98b9a;
+    --pink-fill:#f7e3e7;
+    --green-border:#5c8a68;
+    --green-fill:#e9f2e9;
+    --purple-border:#7b6fa6;
+    --purple-fill:#eae6f4;
+    --gold:#b8862e;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Cairo',sans-serif;
+    background:linear-gradient(180deg,#efe9de,#e4dccb);
+    color:var(--ink);
+    padding:24px 12px 60px;
+  }
+
+  .toolbar{
+    max-width:920px;
+    margin:22px auto 0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+  }
+  .toolbar button{
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    border:none;
+    border-radius:8px;
+    padding:10px 16px;
+    cursor:pointer;
+    color:#fff;
+    box-shadow:0 2px 4px rgba(0,0,0,0.15);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .toolbar button:hover{transform:translateY(-1px); box-shadow:0 4px 8px rgba(0,0,0,0.2);}
+  .toolbar button:active{transform:translateY(0);}
+  .btn-save{background:var(--green-border);}
+  .btn-new{background:#3d6ea5;}
+  .btn-update{background:var(--gold);}
+  .btn-delete{background:var(--maroon);}
+  .btn-print{background:#4a4540;}
+  .btn-viewall{background:var(--purple-border);}
+
+  .receipt{
+    max-width:920px;
+    margin:0 auto;
+    background:#fffdf9;
+    border:2px solid #cbb98a;
+    border-radius:6px;
+    padding:28px 32px 22px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.18);
+  }
+
+  .letterhead{text-align:center; margin-bottom:6px;}
+  .letterhead h1{
+    font-family:'Amiri',serif;
+    font-size:34px;
+    color:var(--maroon);
+    margin:0 0 6px;
+    letter-spacing:1px;
+  }
+  .letterhead .line1{color:var(--maroon); font-weight:600; font-size:14px; margin:2px 0;}
+  .letterhead .line2{color:#c56a2e; font-weight:600; font-size:13px; margin:2px 0;}
+  .letterhead .line3{color:#20406e; font-weight:700; font-size:13px; margin:2px 0;}
+  .letterhead .line4{color:#2f6e4f; font-weight:700; font-size:13px; margin:6px 0 10px;}
+
+  .subhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-top:1px solid #ccc;
+    border-bottom:1px solid #ccc;
+    padding:6px 4px;
+    margin-bottom:14px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .subhead .no-field{color:var(--maroon);}
+  .subhead input{
+    font-family:'Cairo',sans-serif;
+    border:none;
+    border-bottom:1px dotted #999;
+    background:transparent;
+    font-weight:700;
+    text-align:center;
+    width:80px;
+    font-size:14px;
+  }
+
+  .meta-row{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:16px; font-size:14px; font-weight:600;}
+  .meta-row .field{display:flex; align-items:center; gap:6px; flex:1; min-width:220px;}
+  .meta-row label{white-space:nowrap; color:var(--maroon);}
+  .meta-row input{
+    flex:1;
+    border:none;
+    border-bottom:1px dotted #999;
+    background:transparent;
+    font-family:'Cairo',sans-serif;
+    font-size:14px;
+    padding:2px 4px;
+  }
+  .meta-row input:focus{outline:none; border-bottom:1px solid var(--maroon);}
+
+  table{width:100%; border-collapse:collapse; margin-bottom:0;}
+  thead th{
+    font-size:13px;
+    font-weight:800;
+    padding:8px 4px;
+    text-align:center;
+    border:1px solid #999;
+  }
+  th.col-price, td.col-price{background:var(--pink-fill); border-color:var(--pink-border);}
+  th.col-qty, td.col-qty{background:var(--green-fill); border-color:var(--green-border);}
+  th.col-details, td.col-details{background:var(--purple-fill); border-color:var(--purple-border);}
+  th.col-total, td.col-total{background:var(--pink-fill); border-color:var(--pink-border);}
+  th.col-no, td.col-no{background:var(--purple-fill); border-color:var(--purple-border); font-weight:700;}
+
+  tbody td{
+    border:1px solid #ccc;
+    padding:4px;
+    text-align:center;
+    vertical-align:middle;
+  }
+  tbody td input{
+    width:100%;
+    border:none;
+    background:transparent;
+    font-family:'Cairo',sans-serif;
+    font-size:12px;
+    text-align:center;
+    padding:4px 2px;
+  }
+  tbody td input:focus{outline:none; background:#fffbe8;}
+  .col-no{width:28px;}
+  .col-price{width:68px;}
+  .col-qty{width:52px;}
+  .col-total{width:80px;}
+  .col-details{width:auto;}
+
+  tbody td.col-details{padding:2px;}
+  tbody td.col-details textarea{
+    width:100%;
+    min-height:44px;
+    resize:vertical;
+    border:none;
+    background:transparent;
+    font-family:'Cairo',sans-serif;
+    font-size:13px;
+    text-align:right;
+    padding:6px 8px;
+    line-height:1.5;
+  }
+  tbody td.col-details textarea:focus{outline:none; background:#fffbe8;}
+
+  .row-actions{width:30px;}
+  .remove-row{
+    border:none; background:transparent; color:#b23; cursor:pointer; font-size:15px; font-weight:700;
+  }
+
+  .add-row-wrap{text-align:center; margin:10px 0;}
+  .add-row-wrap button{
+    border:1px dashed var(--purple-border);
+    background:var(--purple-fill);
+    color:var(--purple-border);
+    font-family:'Cairo',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    padding:6px 18px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+
+  .total-row{
+    display:flex;
+    margin-top:12px;
+    border:1px solid var(--purple-border);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .total-row .label{
+    background:var(--purple-fill);
+    flex:3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    color:var(--maroon);
+    font-size:15px;
+    padding:10px;
+  }
+  .total-row .value{
+    background:var(--pink-fill);
+    flex:1.3;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:16px;
+    color:var(--ink);
+    padding:10px;
+  }
+
+  .footer-row{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .footer-row .note{color:#20406e;}
+  .footer-row .sig{color:var(--maroon);}
+
+  /* Modal for view all */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    display:none; align-items:flex-start; justify-content:center;
+    padding:40px 12px; overflow-y:auto; z-index:50;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-box{
+    background:#fffdf9; border-radius:10px; max-width:900px; width:100%;
+    padding:20px 24px 28px; box-shadow:0 10px 40px rgba(0,0,0,0.4);
+  }
+  .modal-box h2{color:var(--maroon); text-align:center; margin-top:0;}
+  .modal-summary{
+    text-align:center; font-weight:800; color:var(--purple-border);
+    margin-bottom:16px; font-size:16px;
+  }
+  .receipt-list{display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow-y:auto;}
+  .receipt-item{
+    display:flex; justify-content:space-between; align-items:center;
+    border:1px solid #ddd; border-radius:8px; padding:10px 14px;
+    background:#fbf9f4;
+  }
+  .receipt-item .info{font-size:13px; font-weight:600;}
+  .receipt-item .info b{color:var(--maroon);}
+  .receipt-item .actions button{
+    font-family:'Cairo',sans-serif; font-size:12px; font-weight:700;
+    border:none; border-radius:6px; padding:6px 10px; margin-inline-start:6px; cursor:pointer; color:#fff;
+  }
+  .btn-load{background:#3d6ea5;}
+  .btn-del-one{background:var(--maroon);}
+  .modal-close{
+    display:block; margin:18px auto 0; background:#4a4540; color:#fff; border:none;
+    border-radius:8px; padding:8px 22px; font-family:'Cairo',sans-serif; font-weight:700; cursor:pointer;
+  }
+  .empty-msg{text-align:center; color:#888; padding:30px 0; font-weight:600;}
+
+  .status-msg{
+    max-width:920px; margin:0 auto 10px; text-align:center; font-weight:700; font-size:13px;
+    color:var(--green-border); min-height:18px;
+  }
+
+  .setup-banner{
+    max-width:920px; margin:0 auto 16px; background:#fff3cd; border:1px solid #e0b84a;
+    color:#6b4e00; border-radius:8px; padding:14px 18px; font-size:13px; font-weight:600;
+    line-height:1.8; display:none;
+  }
+  .setup-banner.show{display:block;}
+  .setup-banner code{background:#fff; padding:1px 6px; border-radius:4px; direction:ltr; display:inline-block;}
+
+  @media print{
+    body{background:#fff; padding:0;}
+    .toolbar, .modal-overlay, .status-msg, .add-row-wrap, .remove-row{display:none !important;}
+    .receipt{box-shadow:none; border:1px solid #000; margin:0; max-width:100%;}
+  }
+
+  @media (max-width:600px){
+    .receipt{padding:16px 14px;}
+    .letterhead h1{font-size:26px;}
+    .meta-row{flex-direction:column; gap:10px;}
+    th, td{font-size:11px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="status-msg" id="statusMsg"></div>
+
+  <div class="setup-banner" id="setupBanner">
+    ⚠️ لم يتم إعداد قاعدة البيانات السحابية بعد. الحفظ والمشاركة بين الأجهزة لن يعملا حتى تضيف بيانات مشروع Firebase الخاص بك داخل الكود، في المكان المكتوب عليه <code>firebaseConfig</code> بأول ملف الكود. راجع رسالتي في المحادثة للخطوات بالتفصيل.
+  </div>
+
+  <div class="receipt" id="receiptEl">
+    <div class="letterhead">
+      <h1>كراج التساهل</h1>
+      <div class="line1">لبيع المواد الاحتياطية لكافة انواع سيارات الديزل</div>
+      <div class="line2">ومستعدون لتصليح جميع انواع سيارات الديزل</div>
+      <div class="line3">منظومة الهودروليك - منظومة الهواء - منظومة التبريد</div>
+      <div class="line4">منظومة البريك - كهربائيات عامة</div>
+    </div>
+
+    <div class="subhead">
+      <div class="no-field">No. <input type="text" id="receiptNo" value="0001"></div>
+      <div>الموصل - شارع اربيل - قرب السيطرة</div>
+      <div>التاريخ: <input type="date" id="receiptDate"></div>
+    </div>
+
+    <div class="meta-row">
+      <div class="field">
+        <label>حضرة السيد:</label>
+        <input type="text" id="customerName" placeholder="اسم الزبون">
+      </div>
+      <div class="field">
+        <label>العنوان:</label>
+        <input type="text" id="customerAddress" placeholder="العنوان">
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="col-no">ت<br>No.</th>
+          <th class="col-total">المبلغ الكلي<br>Total Price</th>
+          <th class="col-details">التفاصيل<br>Details</th>
+          <th class="col-qty">العدد<br>Qty</th>
+          <th class="col-price">سعر المفرد<br>Price</th>
+          <th class="row-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="rowsBody"></tbody>
+    </table>
+
+    <div class="add-row-wrap">
+      <button id="btnAddRow">+ إضافة سطر</button>
+    </div>
+
+    <div class="total-row">
+      <div class="label">المجموع Total</div>
+      <div class="value" id="grandTotal">0</div>
+    </div>
+
+    <div class="footer-row">
+      <div class="note">لخطأ والسهو مرجوع للطرفين</div>
+      <div class="sig">التوقيع: ______________</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn-save" id="btnSave">💾 حفظ الوصل</button>
+    <button class="btn-update" id="btnUpdate">✏️ تحديث البيانات</button>
+    <button class="btn-new" id="btnNew">🧾 وصل جديد</button>
+    <button class="btn-viewall" id="btnViewAll">📋 عرض الكل</button>
+    <button class="btn-print" id="btnPrint">🖨️ طباعة</button>
+    <button class="btn-delete" id="btnDeleteAll">🗑️ حذف الكل</button>
+  </div>
+
+  <!-- View All Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-box">
+      <h2>كل الوصولات المحفوظة</h2>
+      <div class="modal-summary" id="modalSummary"></div>
+      <div class="receipt-list" id="receiptList"></div>
+      <button class="modal-close" id="modalClose">إغلاق</button>
+    </div>
+  </div>
+
+<script>
+// ============================================================
+// 1) إعداد Firebase — استبدل القيم التالية ببيانات مشروعك
+//    (راجع خطوات الحصول عليها في شرح Claude في المحادثة)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyDXlHrJgbLdBB9DKAcP--bBtKnff-AEr4Q",
+  authDomain: "tasahel-aa.firebaseapp.com",
+  projectId: "tasahel-aa",
+  storageBucket: "tasahel-aa.firebasestorage.app",
+  messagingSenderId: "34181512751",
+  appId: "1:34181512751:web:d8f2830a645209ce0550da"
+};
+
+let FIREBASE_CONFIGURED = firebaseConfig.apiKey !== "ضع_مفتاحك_هنا";
+let db = null;
+if(FIREBASE_CONFIGURED){
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+  }catch(e){
+    console.error('فشل الاتصال بـ Firebase:', e);
+    FIREBASE_CONFIGURED = false;
+  }
+}
+
+let rowCount = 0;
+let currentSavedKey = null; // storage key of the receipt currently loaded, for "update"
+
+function makeRow(price='', qty='', details='', total=''){
+  rowCount++;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="col-no">${rowCount}</td>
+    <td class="col-total"><input type="text" class="inp-total" value="${total}" readonly></td>
+    <td class="col-details"><textarea class="inp-details" placeholder="وصف المادة / ملاحظات">${details}</textarea></td>
+    <td class="col-qty"><input type="number" class="inp-qty" value="${qty}" min="0"></td>
+    <td class="col-price"><input type="number" class="inp-price" value="${price}" min="0"></td>
+    <td class="row-actions"><button class="remove-row" title="حذف السطر">✕</button></td>
+  `;
+  tr.querySelector('.inp-price').addEventListener('input', recalcRow);
+  tr.querySelector('.inp-qty').addEventListener('input', recalcRow);
+  tr.querySelector('.remove-row').addEventListener('click', ()=>{
+    tr.remove();
+    renumberRows();
+    recalcGrandTotal();
+  });
+  return tr;
+}
+
+function recalcRow(e){
+  const tr = e.target.closest('tr');
+  const price = parseFloat(tr.querySelector('.inp-price').value) || 0;
+  const qty = parseFloat(tr.querySelector('.inp-qty').value) || 0;
+  tr.querySelector('.inp-total').value = (price*qty) ? (price*qty).toLocaleString() : '';
+  recalcGrandTotal();
+}
+
+function recalcGrandTotal(){
+  let sum = 0;
+  document.querySelectorAll('#rowsBody tr').forEach(tr=>{
+    const price = parseFloat(tr.querySelector('.inp-price').value) || 0;
+    const qty = parseFloat(tr.querySelector('.inp-qty').value) || 0;
+    sum += price*qty;
+  });
+  document.getElementById('grandTotal').textContent = sum.toLocaleString();
+  return sum;
+}
+
+function renumberRows(){
+  rowCount = 0;
+  document.querySelectorAll('#rowsBody tr').forEach(tr=>{
+    rowCount++;
+    tr.querySelector('.col-no').textContent = rowCount;
+  });
+}
+
+function addEmptyRow(){
+  document.getElementById('rowsBody').appendChild(makeRow());
+}
+
+function ensureMinRows(n){
+  const body = document.getElementById('rowsBody');
+  while(body.children.length < n){
+    addEmptyRow();
+  }
+}
+
+function showStatus(msg){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 2500);
+}
+
+function collectReceiptData(){
+  const rows = [];
+  document.querySelectorAll('#rowsBody tr').forEach(tr=>{
+    const price = tr.querySelector('.inp-price').value;
+    const qty = tr.querySelector('.inp-qty').value;
+    const details = tr.querySelector('.inp-details').value;
+    if(price || qty || details){
+      rows.push({price, qty, details});
+    }
+  });
+  return {
+    receiptNo: document.getElementById('receiptNo').value,
+    date: document.getElementById('receiptDate').value,
+    customerName: document.getElementById('customerName').value,
+    customerAddress: document.getElementById('customerAddress').value,
+    rows,
+    total: recalcGrandTotal(),
+    savedAt: new Date().toISOString()
+  };
+}
+
+function loadReceiptData(data){
+  document.getElementById('receiptNo').value = data.receiptNo || '';
+  document.getElementById('receiptDate').value = data.date || '';
+  document.getElementById('customerName').value = data.customerName || '';
+  document.getElementById('customerAddress').value = data.customerAddress || '';
+  const body = document.getElementById('rowsBody');
+  body.innerHTML = '';
+  rowCount = 0;
+  (data.rows || []).forEach(r=>{
+    const price = parseFloat(r.price)||0;
+    const qty = parseFloat(r.qty)||0;
+    const total = (price*qty) ? (price*qty).toLocaleString() : '';
+    body.appendChild(makeRow(r.price, r.qty, r.details, total));
+  });
+  ensureMinRows(14);
+  recalcGrandTotal();
+}
+
+function clearForm(newNumber){
+  document.getElementById('receiptNo').value = newNumber || '0001';
+  document.getElementById('receiptDate').value = '';
+  document.getElementById('customerName').value = '';
+  document.getElementById('customerAddress').value = '';
+  document.getElementById('rowsBody').innerHTML = '';
+  rowCount = 0;
+  ensureMinRows(14);
+  recalcGrandTotal();
+  currentSavedKey = null;
+}
+
+async function getAllReceipts(){
+  if(!FIREBASE_CONFIGURED) return [];
+  try{
+    const snapshot = await db.collection('receipts').get();
+    const items = [];
+    snapshot.forEach(doc=> items.push({key: doc.id, data: doc.data()}));
+    items.sort((a,b)=> (a.data.receiptNo||'').localeCompare(b.data.receiptNo||'', undefined, {numeric:true}));
+    return items;
+  }catch(e){
+    console.error('firestore list error', e);
+    return [];
+  }
+}
+
+async function saveCurrentReceipt(asUpdate){
+  if(!FIREBASE_CONFIGURED){
+    showStatus('❌ لم يتم إعداد قاعدة البيانات بعد، راجع البانر أعلى الصفحة');
+    return;
+  }
+  const data = collectReceiptData();
+  if(!data.receiptNo){
+    showStatus('❌ الرجاء إدخال رقم الوصل قبل الحفظ');
+    return;
+  }
+  try{
+    await db.collection('receipts').doc(data.receiptNo).set(data);
+    currentSavedKey = data.receiptNo;
+    showStatus(asUpdate ? '✅ تم تحديث الوصل رقم ' + data.receiptNo : '✅ تم حفظ الوصل رقم ' + data.receiptNo);
+  }catch(e){
+    console.error(e);
+    showStatus('❌ حدث خطأ أثناء الحفظ، تأكد من صحة إعداد Firebase');
+  }
+}
+
+async function deleteAllReceipts(){
+  if(!FIREBASE_CONFIGURED){
+    showStatus('❌ لم يتم إعداد قاعدة البيانات بعد');
+    return;
+  }
+  const items = await getAllReceipts();
+  if(items.length===0){
+    showStatus('لا توجد وصولات محفوظة');
+    return;
+  }
+  if(!confirm('هل أنت متأكد من حذف جميع الوصولات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+  for(const item of items){
+    try{ await db.collection('receipts').doc(item.key).delete(); }catch(e){}
+  }
+  showStatus('🗑️ تم حذف جميع الوصولات');
+}
+
+async function deleteOneReceipt(key, refreshFn){
+  if(!confirm('حذف هذا الوصل؟')) return;
+  try{
+    await db.collection('receipts').doc(key).delete();
+    refreshFn();
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function openViewAll(){
+  const overlay = document.getElementById('modalOverlay');
+  const listEl = document.getElementById('receiptList');
+  const summaryEl = document.getElementById('modalSummary');
+  overlay.classList.add('active');
+  listEl.innerHTML = '<div class="empty-msg">جاري التحميل...</div>';
+
+  async function refresh(){
+    const items = await getAllReceipts();
+    if(items.length===0){
+      listEl.innerHTML = '<div class="empty-msg">لا توجد وصولات محفوظة بعد</div>';
+      summaryEl.textContent = '';
+      return;
+    }
+    let grand = 0;
+    listEl.innerHTML = '';
+    items.forEach(item=>{
+      const d = item.data;
+      grand += (d.total || 0);
+      const div = document.createElement('div');
+      div.className = 'receipt-item';
+      div.innerHTML = `
+        <div class="info">
+          وصل رقم <b>${d.receiptNo}</b> — ${d.customerName || 'بدون اسم'} — ${d.date || ''} — المجموع: <b>${(d.total||0).toLocaleString()}</b>
+        </div>
+        <div class="actions">
+          <button class="btn-load">فتح</button>
+          <button class="btn-del-one">حذف</button>
+        </div>
+      `;
+      div.querySelector('.btn-load').addEventListener('click', ()=>{
+        loadReceiptData(d);
+        currentSavedKey = item.key;
+        overlay.classList.remove('active');
+        showStatus('📂 تم فتح الوصل رقم ' + d.receiptNo);
+      });
+      div.querySelector('.btn-del-one').addEventListener('click', ()=> deleteOneReceipt(item.key, refresh));
+      listEl.appendChild(div);
+    });
+    summaryEl.textContent = 'عدد الوصولات: ' + items.length + '   —   مجموع كل الوصولات: ' + grand.toLocaleString();
+  }
+  await refresh();
+}
+
+// Event bindings
+document.getElementById('btnAddRow').addEventListener('click', addEmptyRow);
+document.getElementById('btnSave').addEventListener('click', ()=> saveCurrentReceipt(false));
+document.getElementById('btnUpdate').addEventListener('click', ()=> saveCurrentReceipt(true));
+document.getElementById('btnNew').addEventListener('click', async ()=>{
+  const items = await getAllReceipts();
+  let nextNum = 1;
+  items.forEach(it=>{
+    const n = parseInt(it.data.receiptNo);
+    if(!isNaN(n) && n >= nextNum) nextNum = n+1;
+  });
+  clearForm(String(nextNum).padStart(4,'0'));
+  showStatus('🧾 وصل جديد جاهز');
+});
+document.getElementById('btnViewAll').addEventListener('click', openViewAll);
+document.getElementById('btnPrint').addEventListener('click', ()=> window.print());
+document.getElementById('btnDeleteAll').addEventListener('click', deleteAllReceipts);
+document.getElementById('modalClose').addEventListener('click', ()=>{
+  document.getElementById('modalOverlay').classList.remove('active');
+});
+document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='modalOverlay') e.target.classList.remove('active');
+});
+
+// init
+if(!FIREBASE_CONFIGURED){
+  document.getElementById('setupBanner').classList.add('show');
+}
+clearForm('0001');
+</script>
+</body>
+</html>
