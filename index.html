@@ -105,6 +105,12 @@
     width:80px;
     font-size:14px;
   }
+  .subhead input[type="date"]{
+    width:150px;
+    min-width:150px;
+    font-size:13px;
+    padding:2px 4px;
+  }
 
   .meta-row{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:16px; font-size:14px; font-weight:600;}
   .meta-row .field{display:flex; align-items:center; gap:6px; flex:1; min-width:220px;}
@@ -363,10 +369,10 @@
       <thead>
         <tr>
           <th class="col-no">ت<br>No.</th>
-          <th class="col-total">المبلغ الكلي<br>Total Price</th>
           <th class="col-details">التفاصيل<br>Details</th>
           <th class="col-qty">العدد<br>Qty</th>
           <th class="col-price">سعر المفرد<br>Price</th>
+          <th class="col-total">المبلغ الكلي<br>Total Price</th>
           <th class="row-actions"></th>
         </tr>
       </thead>
@@ -441,10 +447,10 @@ function makeRow(price='', qty='', details='', total=''){
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="col-no">${rowCount}</td>
-    <td class="col-total"><input type="text" class="inp-total" value="${total}" readonly></td>
     <td class="col-details"><textarea class="inp-details" placeholder="وصف المادة / ملاحظات">${details}</textarea></td>
     <td class="col-qty"><input type="number" class="inp-qty" value="${qty}" min="0"></td>
     <td class="col-price"><input type="number" class="inp-price" value="${price}" min="0"></td>
+    <td class="col-total"><input type="text" class="inp-total" value="${total}" readonly></td>
     <td class="row-actions"><button class="remove-row" title="حذف السطر">✕</button></td>
   `;
   tr.querySelector('.inp-price').addEventListener('input', recalcRow);
