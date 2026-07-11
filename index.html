@@ -225,6 +225,42 @@
     padding:10px;
   }
 
+  .subtotals-row{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+  .subtotals-row .box{
+    flex:1;
+    min-width:140px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border:1px solid var(--green-border);
+    border-radius:4px;
+    overflow:hidden;
+    background:var(--green-fill);
+    padding:8px 12px;
+    font-weight:700;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .subtotals-row .box label{color:#2f6e4f;}
+  .subtotals-row .box input{
+    width:90px;
+    border:none;
+    background:transparent;
+    font-family:'Cairo',sans-serif;
+    font-weight:800;
+    font-size:14px;
+    text-align:center;
+    padding:2px 4px;
+  }
+  .subtotals-row .box input:focus{outline:none;}
+  .subtotals-row .box.remain{border-color:var(--pink-border); background:var(--pink-fill);}
+  .subtotals-row .box.remain span{font-weight:800; font-size:14px;}
+
   .footer-row{
     display:flex;
     justify-content:space-between;
@@ -394,6 +430,17 @@
       <button id="btnAddRow">+ إضافة سطر</button>
     </div>
 
+    <div class="subtotals-row">
+      <div class="box">
+        <label>المبلغ المدفوع</label>
+        <input type="number" id="paidAmount" placeholder="0" min="0">
+      </div>
+      <div class="box remain">
+        <label>المتبقي</label>
+        <span id="remainAmount">0</span>
+      </div>
+    </div>
+
     <div class="total-row">
       <div class="label">المجموع Total</div>
       <div class="value" id="grandTotal">0</div>
@@ -491,7 +538,14 @@ function recalcGrandTotal(){
     sum += price*qty;
   });
   document.getElementById('grandTotal').textContent = sum.toLocaleString();
+  recalcRemaining(sum);
   return sum;
+}
+
+function recalcRemaining(grandSum){
+  const grand = (grandSum !== undefined) ? grandSum : (parseFloat(document.getElementById('grandTotal').textContent.replace(/,/g,'')) || 0);
+  const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
+  document.getElementById('remainAmount').textContent = (grand - paid).toLocaleString();
 }
 
 function renumberRows(){
@@ -529,6 +583,8 @@ function collectReceiptData(){
       rows.push({price, qty, details});
     }
   });
+  const grand = recalcGrandTotal();
+  const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
   return {
     receiptNo: document.getElementById('receiptNo').value,
     date: document.getElementById('receiptDate').value,
@@ -536,7 +592,9 @@ function collectReceiptData(){
     customerAddress: document.getElementById('customerAddress').value,
     customerPhone: document.getElementById('customerPhone').value,
     rows,
-    total: recalcGrandTotal(),
+    paidAmount: paid,
+    remainAmount: grand - paid,
+    total: grand,
     savedAt: new Date().toISOString()
   };
 }
@@ -547,6 +605,7 @@ function loadReceiptData(data){
   document.getElementById('customerName').value = data.customerName || '';
   document.getElementById('customerAddress').value = data.customerAddress || '';
   document.getElementById('customerPhone').value = data.customerPhone || '';
+  document.getElementById('paidAmount').value = data.paidAmount || '';
   const body = document.getElementById('rowsBody');
   body.innerHTML = '';
   rowCount = 0;
@@ -566,6 +625,7 @@ function clearForm(newNumber){
   document.getElementById('customerName').value = '';
   document.getElementById('customerAddress').value = '';
   document.getElementById('customerPhone').value = '';
+  document.getElementById('paidAmount').value = '';
   document.getElementById('rowsBody').innerHTML = '';
   rowCount = 0;
   ensureMinRows(5);
@@ -709,6 +769,7 @@ async function openViewAll(){
 
 // Event bindings
 document.getElementById('btnAddRow').addEventListener('click', addEmptyRow);
+document.getElementById('paidAmount').addEventListener('input', ()=> recalcRemaining());
 document.getElementById('btnSave').addEventListener('click', ()=> saveCurrentReceipt(false));
 document.getElementById('btnUpdate').addEventListener('click', ()=> saveCurrentReceipt(true));
 document.getElementById('btnNew').addEventListener('click', async ()=>{
