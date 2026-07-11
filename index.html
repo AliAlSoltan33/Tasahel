@@ -370,6 +370,10 @@
         <label>العنوان:</label>
         <input type="text" id="customerAddress" placeholder="العنوان">
       </div>
+      <div class="field">
+        <label>رقم الهاتف:</label>
+        <input type="tel" id="customerPhone" placeholder="اختياري">
+      </div>
     </div>
 
     <table>
@@ -530,6 +534,7 @@ function collectReceiptData(){
     date: document.getElementById('receiptDate').value,
     customerName: document.getElementById('customerName').value,
     customerAddress: document.getElementById('customerAddress').value,
+    customerPhone: document.getElementById('customerPhone').value,
     rows,
     total: recalcGrandTotal(),
     savedAt: new Date().toISOString()
@@ -541,6 +546,7 @@ function loadReceiptData(data){
   document.getElementById('receiptDate').value = data.date || '';
   document.getElementById('customerName').value = data.customerName || '';
   document.getElementById('customerAddress').value = data.customerAddress || '';
+  document.getElementById('customerPhone').value = data.customerPhone || '';
   const body = document.getElementById('rowsBody');
   body.innerHTML = '';
   rowCount = 0;
@@ -550,7 +556,7 @@ function loadReceiptData(data){
     const total = (price*qty) ? (price*qty).toLocaleString() : '';
     body.appendChild(makeRow(r.price, r.qty, r.details, total));
   });
-  ensureMinRows(14);
+  ensureMinRows(5);
   recalcGrandTotal();
 }
 
@@ -559,9 +565,10 @@ function clearForm(newNumber){
   document.getElementById('receiptDate').value = '';
   document.getElementById('customerName').value = '';
   document.getElementById('customerAddress').value = '';
+  document.getElementById('customerPhone').value = '';
   document.getElementById('rowsBody').innerHTML = '';
   rowCount = 0;
-  ensureMinRows(14);
+  ensureMinRows(5);
   recalcGrandTotal();
   currentSavedKey = null;
 }
