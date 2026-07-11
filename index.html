@@ -526,7 +526,7 @@ function recalcRow(e){
   const tr = e.target.closest('tr');
   const price = parseFloat(tr.querySelector('.inp-price').value) || 0;
   const qty = parseFloat(tr.querySelector('.inp-qty').value) || 0;
-  tr.querySelector('.inp-total').value = (price*qty) ? (price*qty).toLocaleString() : '';
+  tr.querySelector('.inp-total').value = (price*qty) ? (price*qty).toLocaleString('en-US') : '';
   recalcGrandTotal();
 }
 
@@ -537,7 +537,7 @@ function recalcGrandTotal(){
     const qty = parseFloat(tr.querySelector('.inp-qty').value) || 0;
     sum += price*qty;
   });
-  document.getElementById('grandTotal').textContent = sum.toLocaleString();
+  document.getElementById('grandTotal').textContent = sum.toLocaleString('en-US');
   recalcRemaining(sum);
   return sum;
 }
@@ -545,7 +545,7 @@ function recalcGrandTotal(){
 function recalcRemaining(grandSum){
   const grand = (grandSum !== undefined) ? grandSum : (parseFloat(document.getElementById('grandTotal').textContent.replace(/,/g,'')) || 0);
   const paid = parseFloat(document.getElementById('paidAmount').value) || 0;
-  document.getElementById('remainAmount').textContent = (grand - paid).toLocaleString();
+  document.getElementById('remainAmount').textContent = (grand - paid).toLocaleString('en-US');
 }
 
 function renumberRows(){
@@ -612,7 +612,7 @@ function loadReceiptData(data){
   (data.rows || []).forEach(r=>{
     const price = parseFloat(r.price)||0;
     const qty = parseFloat(r.qty)||0;
-    const total = (price*qty) ? (price*qty).toLocaleString() : '';
+    const total = (price*qty) ? (price*qty).toLocaleString('en-US') : '';
     body.appendChild(makeRow(r.price, r.qty, r.details, total));
   });
   ensureMinRows(5);
@@ -731,7 +731,7 @@ async function openViewAll(){
       div.className = 'receipt-item';
       div.innerHTML = `
         <div class="info">
-          وصل رقم <b>${d.receiptNo}</b> — ${d.customerName || 'بدون اسم'} — ${d.date || ''} — المجموع: <b>${(d.total||0).toLocaleString()}</b>
+          وصل رقم <b>${d.receiptNo}</b> — ${d.customerName || 'بدون اسم'} — ${d.date || ''} — المجموع: <b>${(d.total||0).toLocaleString('en-US')}</b>
         </div>
         <div class="actions">
           <button class="btn-load">📂 فتح</button>
@@ -754,7 +754,7 @@ async function openViewAll(){
       div.querySelector('.btn-del-one').addEventListener('click', ()=> deleteOneReceipt(item.key, refresh));
       listEl.appendChild(div);
     });
-    summaryEl.textContent = 'عدد الوصولات: ' + allItems.length + (query ? ' (المطابقة: ' + items.length + ')' : '') + '   —   مجموع كل الوصولات: ' + grand.toLocaleString();
+    summaryEl.textContent = 'عدد الوصولات: ' + allItems.length + (query ? ' (المطابقة: ' + items.length + ')' : '') + '   —   مجموع كل الوصولات: ' + grand.toLocaleString('en-US');
   }
 
   async function refresh(){
