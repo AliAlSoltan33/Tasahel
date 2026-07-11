@@ -252,18 +252,25 @@
     margin-bottom:16px; font-size:16px;
   }
   .receipt-list{display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow-y:auto;}
+  .receipt-search{
+    width:100%; padding:10px 14px; margin-bottom:14px; border:1px solid #ccc; border-radius:8px;
+    font-family:'Cairo',sans-serif; font-size:14px; box-sizing:border-box;
+  }
+  .receipt-search:focus{outline:none; border-color:var(--purple-border);}
   .receipt-item{
-    display:flex; justify-content:space-between; align-items:center;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
     border:1px solid #ddd; border-radius:8px; padding:10px 14px;
     background:#fbf9f4;
   }
   .receipt-item .info{font-size:13px; font-weight:600;}
   .receipt-item .info b{color:var(--maroon);}
+  .receipt-item .actions{display:flex; flex-direction:row; align-items:center; gap:6px; flex-wrap:nowrap;}
   .receipt-item .actions button{
     font-family:'Cairo',sans-serif; font-size:12px; font-weight:700;
-    border:none; border-radius:6px; padding:6px 10px; margin-inline-start:6px; cursor:pointer; color:#fff;
+    border:none; border-radius:6px; padding:6px 10px; margin:0; cursor:pointer; color:#fff; white-space:nowrap;
   }
   .btn-load{background:#3d6ea5;}
+  .btn-print-one{background:#4a4540;}
   .btn-del-one{background:var(--maroon);}
   .modal-close{
     display:block; margin:18px auto 0; background:#4a4540; color:#fff; border:none;
@@ -408,6 +415,7 @@
     <div class="modal-box">
       <h2>كل الوصولات المحفوظة</h2>
       <div class="modal-summary" id="modalSummary"></div>
+      <input type="text" id="receiptSearch" class="receipt-search" placeholder="🔍 ابحث باسم الزبون...">
       <div class="receipt-list" id="receiptList"></div>
       <button class="modal-close" id="modalClose">إغلاق</button>
     </div>
@@ -623,16 +631,30 @@ async function openViewAll(){
   const overlay = document.getElementById('modalOverlay');
   const listEl = document.getElementById('receiptList');
   const summaryEl = document.getElementById('modalSummary');
+  const searchEl = document.getElementById('receiptSearch');
   overlay.classList.add('active');
   listEl.innerHTML = '<div class="empty-msg">جاري التحميل...</div>';
+  searchEl.value = '';
 
-  async function refresh(){
-    const items = await getAllReceipts();
-    if(items.length===0){
+  let allItems = [];
+
+  function renderList(){
+    const query = searchEl.value.trim().toLowerCase();
+    const items = query
+      ? allItems.filter(it => (it.data.customerName || '').toLowerCase().includes(query))
+      : allItems;
+
+    if(allItems.length === 0){
       listEl.innerHTML = '<div class="empty-msg">لا توجد وصولات محفوظة بعد</div>';
       summaryEl.textContent = '';
       return;
     }
+    if(items.length === 0){
+      listEl.innerHTML = '<div class="empty-msg">لا توجد وصولات مطابقة لهذا الاسم</div>';
+      summaryEl.textContent = 'عدد الوصولات: ' + allItems.length;
+      return;
+    }
+
     let grand = 0;
     listEl.innerHTML = '';
     items.forEach(item=>{
@@ -645,8 +667,9 @@ async function openViewAll(){
           وصل رقم <b>${d.receiptNo}</b> — ${d.customerName || 'بدون اسم'} — ${d.date || ''} — المجموع: <b>${(d.total||0).toLocaleString()}</b>
         </div>
         <div class="actions">
-          <button class="btn-load">فتح</button>
-          <button class="btn-del-one">حذف</button>
+          <button class="btn-load">📂 فتح</button>
+          <button class="btn-print-one">🖨️ طباعة</button>
+          <button class="btn-del-one">🗑️ حذف</button>
         </div>
       `;
       div.querySelector('.btn-load').addEventListener('click', ()=>{
@@ -655,11 +678,25 @@ async function openViewAll(){
         overlay.classList.remove('active');
         showStatus('📂 تم فتح الوصل رقم ' + d.receiptNo);
       });
+      div.querySelector('.btn-print-one').addEventListener('click', ()=>{
+        loadReceiptData(d);
+        currentSavedKey = item.key;
+        overlay.classList.remove('active');
+        setTimeout(()=> window.print(), 200);
+      });
       div.querySelector('.btn-del-one').addEventListener('click', ()=> deleteOneReceipt(item.key, refresh));
       listEl.appendChild(div);
     });
-    summaryEl.textContent = 'عدد الوصولات: ' + items.length + '   —   مجموع كل الوصولات: ' + grand.toLocaleString();
+    summaryEl.textContent = 'عدد الوصولات: ' + allItems.length + (query ? ' (المطابقة: ' + items.length + ')' : '') + '   —   مجموع كل الوصولات: ' + grand.toLocaleString();
   }
+
+  async function refresh(){
+    listEl.innerHTML = '<div class="empty-msg">جاري التحميل...</div>';
+    allItems = await getAllReceipts();
+    renderList();
+  }
+
+  searchEl.oninput = renderList;
   await refresh();
 }
 
